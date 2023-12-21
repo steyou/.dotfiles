@@ -1,0 +1,6 @@
+#.dwm/.git
+.dwm/dwm
+.dwm/dwm.png
+*.o
+*.diff
+*.1
