@@ -1,6 +1,7 @@
 #.dwm/.git
 .dwm/dwm
 .dwm/dwm.png
+.dwm/config.def.h
 *.o
 *.diff
 *.1
