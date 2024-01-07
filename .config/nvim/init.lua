@@ -1,3 +1,6 @@
 require("config.opts")
+require("config.keymaps")
 require("config.lazy")
 require("config.autocmd")
+require("config.lsp")
+require("config.debugger")

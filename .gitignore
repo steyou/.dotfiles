@@ -2,6 +2,8 @@
 .dwm/dwm
 .dwm/dwm.png
 .dwm/config.def.h
+.dwm/config.h
+*/**/README.md
 *.o
 *.diff
 *.1
