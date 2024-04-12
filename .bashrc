@@ -15,7 +15,7 @@ alias nv='nvim'
 #PS1='\[\e[38;2;208;200;200m\]\u@\h\[\e[0m\]:\[\e[38;2;27;32;33m\]\w\[\e[0m\]\$ '
 #PS1='\u@\h \W \$ '
 PS1='\u@\h \[\e[1;10m\]$(date "+%H:%M:%S")\[\e[0m\] \W \$ '
-EDITOR='nvim'
+EDITOR='vim'
 
 # >>> conda initialize >>>
 # !! Contents within this block are managed by 'conda init' !!
