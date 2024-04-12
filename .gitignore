@@ -7,3 +7,9 @@
 *.o
 *.diff
 *.1
+.emacs.d/auto-save-list
+.emacs.d/elpa
+.emacs.d/init.el~
+.emacs.d/transient
+.emacs.d/**/*.eld
+*~undo-tree~

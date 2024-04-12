@@ -9,7 +9,8 @@ if __name__ == "__main__":
         ".dwm",
         ".config/nvim",
         ".config/neofetch",
-        ".config/alacritty"
+        ".config/alacritty",
+        ".emacs.d"
     ]
     
     cmd = ""
