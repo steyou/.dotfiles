@@ -12,4 +12,7 @@
 .emacs.d/init.el~
 .emacs.d/transient
 .emacs.d/**/*.eld
+.emacs.d/tildefiles
+.emacs.d/projects
 *~undo-tree~
+.config/nvim/lazy-lock.json
