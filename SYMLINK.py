@@ -6,7 +6,6 @@ if __name__ == "__main__":
     
     paths = [
         ".bashrc",
-        ".dwm",
         ".config/nvim",
         ".config/neofetch",
         ".config/alacritty",
