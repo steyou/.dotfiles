@@ -1,7 +1,13 @@
 ;; Basic setup
-(setq inhibit-startup-message t)
-(setq indent-tabs-mode nil) ; always spaces
+(setq-default inhibit-startup-message t)
+(setq-default indent-tabs-mode nil) ; always spaces
+(setq-default tab-width 4)
+(setq-default indent-line-function 'insert-tab)
 (menu-bar-mode -1)  ; Disable the menu bar
+
+;(setq backup-directory-alist `(("." . "~/.emacs.d/tildefiles/")))
+(setq backup-directory-alist nil)
+(setq backup-by-copying t)
 
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit) ; forcibly escape prompts on Escape
 
@@ -27,19 +33,6 @@
 (eval-when-compile
   (require 'use-package))
 
-(use-package helm
-  :ensure t
-  :demand t
-  :bind (("M-x" . helm-M-x) ; SC
-         ("C-x C-f" . helm-find-files)
-         ("C-x b" . helm-buffers-list)
-         ("C-x c o" . helm-occur)) ;SC
-         ("M-y" . helm-show-kill-ring) ;SC
-         ("C-x r b" . helm-filtered-bookmarks) ;SC
-  :config
-    (require 'helm-config)
-    (helm-mode 1))
-
 ;; Display line numbers
 (use-package display-line-numbers
   :config
@@ -57,8 +50,13 @@
   (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
   (setq evil-want-keybinding nil)
   (setq evil-undo-system 'undo-tree)
+  (setq evil-emacs-state-modes nil)
+  (setq evil-insert-state-modes nil)
+  (setq evil-motion-state-modes nil)
   :config
   (evil-mode 1))
+(define-key evil-normal-state-map (kbd "gb") 'next-buffer)
+(define-key evil-normal-state-map (kbd "gB") 'previous-buffer)
 
 (use-package evil-collection
   :after evil
@@ -66,27 +64,39 @@
   :config
   (evil-collection-init))
 
-;(use-package evil
-;  :ensure t
-					;  :init
-(setq evil-undo-system 'undo-tree)
-;    ;(setq evil-want-integration t) ;; This is optional since it's already set to t by default.
-;    ;(setq evil-want-keybinding nil)
-;  :config (evil-mode 1)
-
-;(use-package evil-collection
-;  :after evil
-;  :ensure t
-;  :config
-;  (evil-collection-init))
-
 ;; LSP things
+(use-package lsp-mode
+  :init
+  ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
+  (setq lsp-keymap-prefix "C-c l")
+  :hook (;; replace XXX-mode with concrete major-mode(e. g. python-mode)
+         (c++-mode . lsp)
+         (c-mode . lsp)
+         ;; if you want which-key integration
+         (lsp-mode . lsp-enable-which-key-integration))
+  :commands lsp)
 
-(use-package tree-sitter
+(use-package helm
   :ensure t
+  :demand t
+  :bind (("M-x" . helm-M-x) ; SC
+         ("C-x C-f" . helm-find-files)
+         ("C-x b" . helm-buffers-list)
+         ("C-x c o" . helm-occur)) ;SC
+         ("M-y" . helm-show-kill-ring) ;SC
+         ("C-x r b" . helm-filtered-bookmarks) ;SC
   :config
-  (add-hook 'c-mode-hook #'tree-sitter-mode)
-  (add-hook 'c++-mode-hook #'tree-sitter-mode))
+    (require 'helm-config)
+    (helm-mode 1))
+
+;; optionally
+(use-package lsp-ui :commands lsp-ui-mode)
+;; if you are helm user
+(use-package helm-lsp :commands helm-lsp-workspace-symbol)
+
+;; optionally if you want to use debugger
+(use-package dap-mode)
+(use-package dap-cpptools)
 
 ;; which-key
 (use-package which-key
@@ -96,17 +106,24 @@
   (which-key-mode)
   (setq which-key-idle-delay 0.3))
 
+(use-package tree-sitter
+  :ensure t
+  :config
+  (add-hook 'c-mode-hook #'tree-sitter-mode)
+  (add-hook 'c++-mode-hook #'tree-sitter-mode))
+
 ;; vterm
 (use-package vterm
-  :ensure t)
+  :ensure t
+  :bind ("C-/" . vterm))
 
 ;; eglot
-(use-package eglot
-  :ensure t
-  :hook ((c-mode c++-mode) . eglot-ensure)
-  :config
-  (add-to-list 'eglot-server-programs '((c-mode c++-mode) . ("clangd")))
-  (setq eldoc-echo-area-use-multiline-p nil))
+;(use-package eglot
+;  :ensure t
+;  :hook ((c-mode c++-mode) . eglot-ensure)
+;  :config
+;  (add-to-list 'eglot-server-programs '((c-mode c++-mode) . ("clangd")))
+;  (setq eldoc-echo-area-use-multiline-p nil))
 
 ;; company mode
 (use-package company
