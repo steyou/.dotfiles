@@ -9,6 +9,7 @@ vim.opt.showmatch = true
 vim.opt.linebreak = true
 vim.opt.guicursor = ""
 vim.opt.scrolloff = 1
+vim.opt.colorcolumn = "90"
 
 -- Searching settings
 vim.opt.hlsearch = false
@@ -35,8 +36,8 @@ vim.opt.switchbuf = 'split'
 
 vim.g.mapleader = " "
 vim.keymap.set("n", "<leader><enter>", vim.cmd.Ex, { desc = "netrw" })
-vim.keymap.set("n", "<leader>f", vim.cmd.bnext, { desc = "bnext" })
 vim.keymap.set("n", "<leader>b", vim.cmd.bprev, { desc = "bprev" })
+vim.keymap.set("n", "<leader>f", vim.cmd.bnext, { desc = "bnext" })
 
 -------------------------------------------------------------------------------
 -- Lazy loading setup
@@ -60,6 +61,9 @@ package.path = package.path .. ";" .. vim.fn.stdpath("config") .. "/?.lua"
 require("lazy").setup(
     {
         require("plugins"),
-        require("themes")
+        require("themes")("modus")
     }
 )
+
+-- set the theme
+--require("gruvbox-material")

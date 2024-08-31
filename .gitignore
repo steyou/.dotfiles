@@ -15,4 +15,7 @@
 .emacs.d/tildefiles
 .emacs.d/projects
 *~undo-tree~
+.emacs.d/.cache/
+.emacs.d/.lsp-session-v1
+.emacs.d/org-roam.db
 .config/nvim/lazy-lock.json

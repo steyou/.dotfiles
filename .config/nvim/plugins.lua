@@ -44,6 +44,18 @@ return {
         },
         config = true
     },
+    {
+        'goolord/alpha-nvim',
+        dependencies = { 'echasnovski/mini.icons' },
+        config = function ()
+            require'alpha'.setup(
+                require'alpha.themes.startify'.config
+            )
+            local startify = require'alpha.themes.startify'
+            local version_info = vim.version()
+            startify.section.header.val = "Neovim v" .. version_info.major .. "." .. version_info.minor .. "." .. version_info.patch
+        end
+    };
 -------------------------------------------------------------------------------
 -- LSP Plugins
 -------------------------------------------------------------------------------
@@ -127,7 +139,22 @@ return {
                 lsp_zero.default_keymaps({buffer = bufnr})
             end)
 
-            require('lspconfig').clangd.setup({})
+            require('lspconfig').clangd.setup({
+                cmd = {
+                    "clangd",
+                    "--background-index",
+                    "--clang-tidy",
+                    "--header-insertion=never",
+                    "--completion-style=detailed"
+                },
+                init_options = {
+                    usePlaceholders = true,
+                    completeUnimported = true,
+                    clangdFileStatus = true,
+                    semanticHighlighting = true
+                },
+            })
+            require('lspconfig').texlab.setup({})
         end
     },
     {
@@ -135,24 +162,41 @@ return {
         build = ":TSUpdate",
         config = function()
             require("nvim-treesitter.configs").setup({
-                ensure_installed = {"lua", "cpp"},
+                ensure_installed = {"lua", "cpp", "rust"},
                 sync_install = false,
-                highlight = { enable = true },
+                highlight = { enable = true, disable = {"latex"}},
                 indent = { enable = true },
             })
         end
     },
     {
-        'stevearc/aerial.nvim',
-        config = function()
-            require("aerial").setup()
-            vim.keymap.set("n", "<leader>o", vim.cmd.AerialToggle, { desc = "Toggle outline" })
-        end,
-        dependencies = {
-            "nvim-treesitter/nvim-treesitter",
-            "nvim-tree/nvim-web-devicons"
-        },
+      "hedyhli/outline.nvim",
+      config = function()
+        -- Example mapping to toggle outline
+        vim.keymap.set("n", "<leader>o", "<cmd>Outline<CR>",
+          { desc = "Toggle Outline" })
+
+        require("outline").setup {
+          -- Your setup opts here (leave empty to use defaults)
+          symbol_folding = {
+            -- Depth past which nodes will be folded by default. Set to false to unfold all on open.
+            autofold_depth = 2
+            -- autofold_depth = false
+          }
+        }
+      end,
     },
+    -- {
+    --     'stevearc/aerial.nvim',
+    --     config = function()
+    --         require("aerial").setup()
+    --         vim.keymap.set("n", "<leader>o", vim.cmd.AerialToggle, { desc = "Toggle outline" })
+    --     end,
+    --     dependencies = {
+    --         "nvim-treesitter/nvim-treesitter",
+    --         "nvim-tree/nvim-web-devicons"
+    --     },
+    -- },
     {
         "folke/trouble.nvim",
         dependencies = { "nvim-tree/nvim-web-devicons" },
@@ -170,6 +214,76 @@ return {
           -- refer to the configuration section below
         }
     },
+    {
+        "mbbill/undotree",
+        config = function()
+            vim.keymap.set("n", "<leader>u", vim.cmd.UndotreeToggle)
+        end
+    },
+    --{
+    --    "ThePrimeagen/harpoon",
+    --    branch = "harpoon2",
+    --    config = function()
+    --        local harpoon = require("harpoon")
+
+    --        harpoon:setup({
+    --            -- Setting up custom behavior for a list named "cmd"
+    --            "cmd" = {
+
+    --                -- When you call list:add() this function is called and the return
+    --                -- value will be put in the list at the end.
+    --                --
+    --                -- which means same behavior for prepend except where in the list the
+    --                -- return value is added
+    --                --
+    --                -- @param possible_value string only passed in when you alter the ui manual
+    --                add = function(possible_value)
+    --                    -- get the current line idx
+    --                    local idx = vim.fn.line(".")
+
+    --                    -- read the current line
+    --                    local cmd = vim.api.nvim_buf_get_lines(0, idx - 1, idx, false)[1]
+    --                    if cmd == nil then
+    --                        return nil
+    --                    end
+
+    --                    return {
+    --                        value = cmd--,
+    --                        -- context = { ... any data you want ... },
+    --                    }
+    --                end--,
+
+    --                --- This function gets invoked with the options being passed in from
+    --                --- list:select(index, <...options...>)
+    --                --- @param list_item {value: any, context: any}
+    --                --- @param list { ... }
+    --                --- @param option any
+    --                --select = function(list_item, list, option)
+    --                --    -- WOAH, IS THIS HTMX LEVEL XSS ATTACK??
+    --                --    vim.cmd(list_item.value)
+    --                --end
+
+    --            }
+    --        })
+    --        vim.keymap.set("n", "<leader>w", function() harpoon:list():add() end, {desc = "harpoon add"})
+    --        vim.keymap.set("n", "<leader>q", function() harpoon.ui:toggle_quick_menu(harpoon:list()) end, {desc = "harpoon menu"})
+
+    --        vim.keymap.set("n", "<leader>1", function() harpoon:list():select(1) end, {desc = "harpoon 1"})
+    --        vim.keymap.set("n", "<leader>2", function() harpoon:list():select(2) end, {desc = "harpoon 2"})
+    --        vim.keymap.set("n", "<leader>3", function() harpoon:list():select(3) end, {desc = "harpoon 3"})
+    --        vim.keymap.set("n", "<leader>4", function() harpoon:list():select(4) end, {desc = "harpoon 4"})
+    --        vim.keymap.set("n", "<leader>5", function() harpoon:list():select(5) end, {desc = "harpoon 5"})
+    --        vim.keymap.set("n", "<leader>6", function() harpoon:list():select(6) end, {desc = "harpoon 6"})
+    --        vim.keymap.set("n", "<leader>7", function() harpoon:list():select(7) end, {desc = "harpoon 7"})
+    --        vim.keymap.set("n", "<leader>8", function() harpoon:list():select(8) end, {desc = "harpoon 8"})
+    --        vim.keymap.set("n", "<leader>9", function() harpoon:list():select(9) end, {desc = "harpoon 9"})
+
+    --        -- Toggle previous & next buffers stored within Harpoon list
+    --        vim.keymap.set("n", "<leader>a", function() harpoon:list():prev() end, {desc = "harpoon prev"})
+    --        vim.keymap.set("n", "<leader>s", function() harpoon:list():next() end, {desc = "harpoon next"})
+    --    end,
+    --    dependencies = { "nvim-lua/plenary.nvim" }
+    --},
     --{
     --    "stevearc/conform.nvim",
     --    opts = {
@@ -262,7 +376,8 @@ return {
     {
         "ggandor/leap.nvim",
         config = function()
-            require('leap').create_default_mappings()
+            vim.keymap.set({'n', 'x', 'o'}, '\\',  '<Plug>(leap)')
+            --vim.keymap.set({'n', 'x', 'o'}, '|"', '<Plug>(leap-from-window)')
         end
     },
 }
