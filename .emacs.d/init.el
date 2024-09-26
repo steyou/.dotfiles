@@ -222,8 +222,17 @@
 ;(define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
 ;(projectile-mode +1)
 
-;(use-package magit
-;  :ensure t)
+(use-package magit
+  :ensure t)
+
+(use-package perspective
+  :ensure t
+  :bind
+  ;("C-x C-b" . persp-list-buffers)         ; or use a nicer switcher, see below
+  :custom
+  (persp-mode-prefix-key (kbd "C-x x"))  ; pick your own prefix key here
+  :init
+  (persp-mode))
 
 ; commented out because it doesn't play nice with modus-vivendi and people on
 ; internet say it's slow
@@ -281,7 +290,7 @@
  '(helm-minibuffer-history-key "M-p")
  '(highlight-indent-guides-auto-character-face-perc 90)
  '(package-selected-packages
-   '(lsp-treemacs treemacs-projectile treemacs company-c-headers pdf-tools org-roam-ui modus-themes which-key company use-package eglot evil undo-tree))
+   '(perspective lsp-treemacs treemacs-projectile treemacs company-c-headers pdf-tools org-roam-ui modus-themes which-key company use-package eglot evil undo-tree))
  '(warning-suppress-types '((use-package))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
