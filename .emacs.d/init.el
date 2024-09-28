@@ -20,6 +20,9 @@
 (setq backup-directory-alist nil)
 (setq backup-by-copying t)
 
+(setq read-process-output-max (* 1024 1024)) ;; 1MB
+(setq gc-cons-threshold (* 100 1024 1024)) ;; 100MB
+
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit) ; forcibly escape prompts on Escape
 
 ;; Package management setup
@@ -59,12 +62,6 @@
   :config
   (evil-collection-init))
 
-(use-package tree-sitter
-  :ensure t
-  :config
-  (add-hook 'c-mode-hook #'tree-sitter-mode)
-  (add-hook 'c++-mode-hook #'tree-sitter-mode))
-
 ;; Set the default indentation level for C/C++
 (setq c-basic-offset 4)
 (c-set-offset 'innamespace 0)
@@ -89,122 +86,6 @@
   (global-display-line-numbers-mode t))
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; LSP things
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; which-key
-(use-package which-key
-  :ensure t
-  :diminish which-key-mode
-  :config
-  (which-key-mode)
-  (setq which-key-idle-delay 0.3))
-
-(use-package lsp-mode
-  :init
-  ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
-  (setq lsp-keymap-prefix "C-c l")
-  :hook
-  ((lsp-mode . my-lsp)
-   (c++-mode . lsp)
-   (c-mode . lsp)
-   (lsp-mode . lsp-enable-which-key-integration))
-  :commands lsp
-  :config
-  (defun my-lsp()
-    (flycheck-mode)
-    (lsp-ui-mode))
-  )
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Completions
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; Helm is a completion framework for interface navigation
-(use-package helm
-  :ensure t
-  :demand t
-  ;:hook (after-init-startup . open-helm-find-startup)
-  :bind (("M-x" . helm-M-x) ; SC
-         ("C-x C-f" . helm-find-files)
-         ("C-x b" . helm-buffers-list)
-         ("C-x c o" . helm-occur)) ;SC
-         ("M-y" . helm-show-kill-ring) ;SC
-         ("C-x r b" . helm-filtered-bookmarks) ;SC
-  :config
-    ;; (require 'helm-config)
-    (helm-mode 1)
-    (setq helm-ff-skip-boring-files t)
-    (setq helm-ff-file-name-history-use-recentf))
-
-;; optionally
-(use-package lsp-ui :commands lsp-ui-mode)
-;; if you are helm user
-(use-package helm-lsp :commands helm-lsp-workspace-symbol)
-
-(use-package treemacs
-  :ensure t
-  :defer t  ;; Defer loading until it's explicitly called
-  :bind
-  ;; Bind treemacs to a convenient key
-  ("C-x t t" . treemacs)  
-  :config
-  ;; Optional: Customize treemacs settings here
-  (setq treemacs-width 30
-        treemacs-is-never-other-window t))
-(use-package treemacs-projectile
-  :after (treemacs projectile)
-  :ensure t)
-;(use-package treemacs-magit
-;  :after (treemacs magit)
-;  :ensure t)
-
-;(use-package treemacs-icons-dired
-;  :after (treemacs dired)
-;  :ensure t
-;  :config (treemacs-icons-dired-mode))
-;; Optional: Treemacs integration with LSP
-(use-package lsp-treemacs
-  :after (lsp-mode treemacs)
-  :ensure t
-  :config
-  (lsp-treemacs-sync-mode 1))
-
-;; company mode
-;; this is pretty much nvim-cmp in emacs
-(use-package company
-  :ensure t
-  :after lsp-mode
-  :hook
-  ((prog-mode . company-mode)
-   (lsp-mode . flycheck-mode))
-  :bind
-  ;; Enable tab and shift-tab to cycle through completions
-  (:map company-active-map
-        ("<tab>" . company-complete-common-or-cycle)
-        ("<backtab>" . company-select-previous))
-  (:map lsp-mode-map
-        ("<tab>" . company-indent-or-complete-common))
-  :config
-  ;; Enable global Company mode
-  (global-company-mode 1)
-
-  ;; Show numbers in the completion list
-  (setq company-show-numbers t)
-
-  ;; Bind number keys for quick selection in company mode
-  (let ((map company-active-map))
-    (dotimes (i 10)
-      (define-key map (kbd (format "%d" i))
-        `(lambda () (interactive) (company-complete-number ,i)))))
-
-  ;; Customize company backends to include all available completions
-  (setq company-backends '((company-files          ; File names
-                            company-keywords       ; Keywords
-                            company-capf           ; Completion at point
-                            company-dabbrev-code   ; Code words
-                            company-dabbrev))))    ; Text words
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Suites
@@ -279,6 +160,136 @@
 (add-hook 'TeX-after-compilation-finished-functions
            #'TeX-revert-document-buffer)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Completions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Helm is a completion framework for interface navigation
+(use-package helm
+  :ensure t
+  :demand t
+  ;:hook (after-init-startup . open-helm-find-startup)
+  :bind (("M-x" . helm-M-x) ; SC
+         ("C-x C-f" . helm-find-files)
+         ("C-x b" . helm-buffers-list)
+         ("C-x c o" . helm-occur)) ;SC
+         ("M-y" . helm-show-kill-ring) ;SC
+         ("C-x r b" . helm-filtered-bookmarks) ;SC
+  :config
+    ;; (require 'helm-config)
+    (helm-mode 1)
+    (setq helm-ff-skip-boring-files t)
+    (setq helm-ff-file-name-history-use-recentf))
+
+(use-package treemacs
+  :ensure t
+  :defer t  ;; Defer loading until it's explicitly called
+  :bind
+  ;; Bind treemacs to a convenient key
+  ("C-x t t" . treemacs)  
+  :config
+  ;; Optional: Customize treemacs settings here
+  (setq treemacs-width 30
+        treemacs-is-never-other-window t))
+(use-package treemacs-projectile
+  :after (treemacs projectile)
+  :ensure t)
+(use-package treemacs-magit
+  :after (treemacs magit)
+  :ensure t)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; LSP things
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(use-package flycheck
+  :ensure t
+  :init (global-flycheck-mode))
+
+(use-package tree-sitter
+  :ensure t
+  :config
+  (add-hook 'c-mode-hook #'tree-sitter-mode)
+  (add-hook 'c++-mode-hook #'tree-sitter-mode))
+
+(use-package lsp-mode
+  :init
+  ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
+  (setq lsp-keymap-prefix "C-c l")
+  :hook
+  ((c++-mode . lsp-deferred)
+   (c-mode . lsp-deferred)
+   (lsp-mode . lsp-enable-which-key-integration))
+  :commands (lsp lsp-deferred)
+  :config
+  (defun my-lsp()
+    (flycheck-mode)
+    (lsp-ui-mode))
+  )
+
+;; optionally
+(use-package lsp-ui :commands lsp-ui-mode)
+;; if you are helm user
+(use-package helm-lsp :commands helm-lsp-workspace-symbol)
+(use-package lsp-treemacs :commands lsp-treemacs-errors-list)
+
+;; company mode
+;; this is pretty much nvim-cmp in emacs
+(use-package company
+  :ensure t
+  :after lsp-mode
+  :hook
+  ((prog-mode . company-mode)
+   (lsp-mode . flycheck-mode))
+  :bind
+  ;; Enable tab and shift-tab to cycle through completions
+  (:map company-active-map
+        ("<tab>" . company-complete-common-or-cycle)
+        ("<backtab>" . company-select-previous))
+  (:map lsp-mode-map
+        ("<tab>" . company-indent-or-complete-common))
+  :config
+  ;; Enable global Company mode
+  (global-company-mode 1)
+
+  ;; Show numbers in the completion list
+  (setq company-show-numbers t)
+
+  ;; Bind number keys for quick selection in company mode
+  (let ((map company-active-map))
+    (dotimes (i 10)
+      (define-key map (kbd (format "%d" i))
+        `(lambda () (interactive) (company-complete-number ,i)))))
+
+  ;; Customize company backends to include all available completions
+  (setq company-backends '((company-files          ; File names
+                            company-keywords       ; Keywords
+                            company-capf           ; Completion at point
+                            company-dabbrev-code   ; Code words
+                            company-dabbrev))))    ; Text words
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;(use-package treemacs-icons-dired
+;  :after (treemacs dired)
+;  :ensure t
+;  :config (treemacs-icons-dired-mode))
+;; Optional: Treemacs integration with LSP
+(use-package lsp-treemacs
+  :after (lsp-mode treemacs)
+  :ensure t
+  :config
+  (lsp-treemacs-sync-mode 1))
+
+;; which-key
+(use-package which-key
+  :ensure t
+  :diminish which-key-mode
+  :config
+  (which-key-mode)
+  (setq which-key-idle-delay 0.3))
+
 ;; Custom-set variables and faces
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
@@ -290,7 +301,7 @@
  '(helm-minibuffer-history-key "M-p")
  '(highlight-indent-guides-auto-character-face-perc 90)
  '(package-selected-packages
-   '(perspective lsp-treemacs treemacs-projectile treemacs company-c-headers pdf-tools org-roam-ui modus-themes which-key company use-package eglot evil undo-tree))
+   '(flycheck treemacs-magit perspective lsp-treemacs treemacs-projectile treemacs company-c-headers pdf-tools org-roam-ui modus-themes which-key company use-package eglot evil undo-tree))
  '(warning-suppress-types '((use-package))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
