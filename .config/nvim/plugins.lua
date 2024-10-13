@@ -11,12 +11,14 @@ return {
                 section_separators = { left = '', right = '' }
             },
             sections = {
+                lualine_a = {},
                 lualine_b = {},
-                lualine_c = {'filename', 'diff'},
-                lualine_x = {'diagnostics', 'encoding'}
+                lualine_c = {{'filename', symbols = { unnamed = "*scratch*", newfile = "*new*" }}, 'progress', 'location', {'tabs', tab_max_length = 80, symbols = { modified = '*' }}},
+                lualine_x = {{'diff', colored = false}, 'encoding'},
+                lualine_y = {},
+                lualine_z = {},
             }
         },
-        config = true
     },
     {
         "lewis6991/gitsigns.nvim",
@@ -44,34 +46,30 @@ return {
         },
         config = true
     },
-    {
-        'goolord/alpha-nvim',
-        dependencies = { 'echasnovski/mini.icons' },
-        config = function ()
-            require'alpha'.setup(
-                require'alpha.themes.startify'.config
-            )
-            local startify = require'alpha.themes.startify'
-            local version_info = vim.version()
-            startify.section.header.val = "Neovim v" .. version_info.major .. "." .. version_info.minor .. "." .. version_info.patch
-        end
-    };
+    --{
+    --    'goolord/alpha-nvim',
+    --    dependencies = { 'echasnovski/mini.icons' },
+    --    config = function ()
+    --        require'alpha'.setup(
+    --            require'alpha.themes.startify'.config
+    --        )
+    --        local startify = require'alpha.themes.startify'
+    --        local version_info = vim.version()
+    --        startify.section.header.val = "Neovim v" .. version_info.major .. "." .. version_info.minor .. "." .. version_info.patch
+    --    end
+    --},
 -------------------------------------------------------------------------------
 -- LSP Plugins
 -------------------------------------------------------------------------------
     {
         'VonHeikemen/lsp-zero.nvim',
-        branch = 'v3.x',
+        branch = 'v4.x',
         lazy = true,
-        config = false,
-        init = function()
-            vim.g.lsp_zero_extend_cmp = 0
-            vim.g.lsp_zero_extend_lspconfig = 0
-        end
+        config = false -- The docs say to do this
     },
     {
         'hrsh7th/nvim-cmp',
-        --event = 'InsertEnter',
+        event = 'InsertEnter',
         dependencies = {
             {'hrsh7th/cmp-buffer'},
             {'hrsh7th/cmp-path'},
@@ -79,41 +77,22 @@ return {
             {'hrsh7th/cmp-cmdline'}
         },
         config = function()
-            local lsp_zero = require('lsp-zero')
-            lsp_zero.extend_cmp()
-
             local cmp = require('cmp')
             cmp.setup({
-                formatting = lsp_zero.cmp_format({details = true}),
-                mapping = {
-                    ['<C-Enter>'] = cmp.mapping.confirm({select = false})
-                },
-                snippet = {
-                    expand = function(args)
-                        require('luasnip').lsp_expand(args.body)
-                    end
-                },
                 sources = {
                     { name = 'nvim_lsp' },
                     { name = 'buffer' },
                     { name = 'path' },
                     { name = 'luasnip' },
-                }
-            })
-            ---- cmdline : mode
-            cmp.setup.cmdline(':', {
-                mapping = cmp.mapping.preset.cmdline(),
-                sources = cmp.config.sources({
-                    { name = 'path' },
                 },
-                {
-                    {
-                        name = 'cmdline',
-                        option = {
-                            ignore_cmds = { 'Man', '!' },
-                        },
-                    },
-                }),
+                mapping = {
+                    ['<TAB>'] = cmp.mapping.confirm({select = false})
+                },
+                snippet = {
+                    expand = function(args)
+                        require('luasnip').lsp_expand(args.body)
+                    end
+                }
             })
             -- cmdline / mode
             cmp.setup.cmdline('/', {
@@ -121,6 +100,20 @@ return {
                 sources = {
                     { name = 'buffer' }
                 }
+            })
+            -- `:` cmdline setup.
+            cmp.setup.cmdline(':', {
+                mapping = cmp.mapping.preset.cmdline(),
+                sources = cmp.config.sources({
+                    { name = 'path' }
+                }, {
+                    {
+                        name = 'cmdline',
+                        option = {
+                            ignore_cmds = { 'Man', '!' }
+                        }
+                    }
+                })
             })
         end
     },
@@ -131,30 +124,78 @@ return {
         dependencies = {
             {'hrsh7th/cmp-nvim-lsp'}
         },
+        init = function()
+          -- Reserve a space in the gutter
+          -- This will avoid an annoying layout shift in the screen
+          vim.opt.signcolumn = 'yes'
+        end,
         config = function()
-            local lsp_zero = require('lsp-zero')
-            lsp_zero.extend_lspconfig()
+            local lsp_defaults = require('lspconfig').util.default_config
 
-            lsp_zero.on_attach(function(client, bufnr)
-                lsp_zero.default_keymaps({buffer = bufnr})
-            end)
+            -- Add cmp_nvim_lsp capabilities settings to lspconfig
+            -- This should be executed before you configure any language server
+            lsp_defaults.capabilities = vim.tbl_deep_extend(
+                'force',
+                lsp_defaults.capabilities,
+                require('cmp_nvim_lsp').default_capabilities()
+            )
 
+            -- LspAttach is where you enable features that only work
+            -- if there is a language server active in the file
+            vim.api.nvim_create_autocmd('LspAttach', {
+                desc = 'LSP actions',
+                callback = function(event)
+                    vim.keymap.set('n', 'K', '<cmd>lua vim.lsp.buf.hover()<cr>', { buffer = event.buf, desc = "LSP hover" })
+                    vim.keymap.set('n', 'gd', '<cmd>lua vim.lsp.buf.definition()<cr>', { buffer = event.buf, desc = "LSP go def" })
+                    vim.keymap.set('n', 'gD', '<cmd>lua vim.lsp.buf.declaration()<cr>', { buffer = event.buf, desc = "LSP go decl" })
+                    vim.keymap.set('n', 'gi', '<cmd>lua vim.lsp.buf.implementation()<cr>', { buffer = event.buf, desc = "LSP go impl" })
+                    vim.keymap.set('n', 'go', '<cmd>lua vim.lsp.buf.type_definition()<cr>', { buffer = event.buf, desc = "LSP go type" })
+                    vim.keymap.set('n', 'gr', '<cmd>lua vim.lsp.buf.references()<cr>', { buffer = event.buf, desc = "LSP references" })
+                    vim.keymap.set('n', 'gs', '<cmd>lua vim.lsp.buf.signature_help()<cr>', { buffer = event.buf, desc = "LSP signature" })
+                    vim.keymap.set('n', '<F2>', '<cmd>lua vim.lsp.buf.rename()<cr>', { buffer = event.buf, desc = "LSP rename" })
+                    vim.keymap.set({'n', 'x'}, '<F3>', '<cmd>lua vim.lsp.buf.format({async = true})<cr>', { buffer = event.buf, desc = "LSP format" })
+                    vim.keymap.set('n', '<F4>', '<cmd>lua vim.lsp.buf.code_action()<cr>', { buffer = event.buf, desc = "LSP action" })
+                end,
+            })
+
+            -- C++
             require('lspconfig').clangd.setup({
+                keys = {
+                    { "<leader>ch", "<cmd>ClangdSwitchSourceHeader<cr>", desc = "Switch Source/Header (C/C++)" },
+                },
+                root_dir = function(fname)
+                    return require("lspconfig.util").root_pattern(
+                        "Makefile",
+                        "CMakeLists.txt",
+                        "configure.ac",
+                        "configure.in",
+                        "config.h.in",
+                        "meson.build",
+                        "meson_options.txt",
+                        "build.ninja"
+                    )(fname) or require("lspconfig.util").root_pattern("compile_commands.json", "compile_flags.txt")(
+                        fname
+                    ) or require("lspconfig.util").find_git_ancestor(fname)
+                end,
+                capabilities = {
+                  offsetEncoding = { "utf-16" },
+                },
                 cmd = {
                     "clangd",
                     "--background-index",
                     "--clang-tidy",
-                    "--header-insertion=never",
-                    "--completion-style=detailed"
+                    "--header-insertion=iwyu",
+                    "--completion-style=detailed",
+                    "--function-arg-placeholders",
+                    "--fallback-style=llvm",
                 },
                 init_options = {
                     usePlaceholders = true,
                     completeUnimported = true,
                     clangdFileStatus = true,
-                    semanticHighlighting = true
                 },
             })
-            require('lspconfig').texlab.setup({})
+            -- require('lspconfig').texlab.setup()
         end
     },
     {
@@ -217,93 +258,13 @@ return {
     {
         "mbbill/undotree",
         config = function()
-            vim.keymap.set("n", "<leader>u", vim.cmd.UndotreeToggle)
+            vim.keymap.set("n", "<leader>u", vim.cmd.UndotreeToggle, { desc = "undotree" })
         end
     },
-    --{
-    --    "ThePrimeagen/harpoon",
-    --    branch = "harpoon2",
-    --    config = function()
-    --        local harpoon = require("harpoon")
-
-    --        harpoon:setup({
-    --            -- Setting up custom behavior for a list named "cmd"
-    --            "cmd" = {
-
-    --                -- When you call list:add() this function is called and the return
-    --                -- value will be put in the list at the end.
-    --                --
-    --                -- which means same behavior for prepend except where in the list the
-    --                -- return value is added
-    --                --
-    --                -- @param possible_value string only passed in when you alter the ui manual
-    --                add = function(possible_value)
-    --                    -- get the current line idx
-    --                    local idx = vim.fn.line(".")
-
-    --                    -- read the current line
-    --                    local cmd = vim.api.nvim_buf_get_lines(0, idx - 1, idx, false)[1]
-    --                    if cmd == nil then
-    --                        return nil
-    --                    end
-
-    --                    return {
-    --                        value = cmd--,
-    --                        -- context = { ... any data you want ... },
-    --                    }
-    --                end--,
-
-    --                --- This function gets invoked with the options being passed in from
-    --                --- list:select(index, <...options...>)
-    --                --- @param list_item {value: any, context: any}
-    --                --- @param list { ... }
-    --                --- @param option any
-    --                --select = function(list_item, list, option)
-    --                --    -- WOAH, IS THIS HTMX LEVEL XSS ATTACK??
-    --                --    vim.cmd(list_item.value)
-    --                --end
-
-    --            }
-    --        })
-    --        vim.keymap.set("n", "<leader>w", function() harpoon:list():add() end, {desc = "harpoon add"})
-    --        vim.keymap.set("n", "<leader>q", function() harpoon.ui:toggle_quick_menu(harpoon:list()) end, {desc = "harpoon menu"})
-
-    --        vim.keymap.set("n", "<leader>1", function() harpoon:list():select(1) end, {desc = "harpoon 1"})
-    --        vim.keymap.set("n", "<leader>2", function() harpoon:list():select(2) end, {desc = "harpoon 2"})
-    --        vim.keymap.set("n", "<leader>3", function() harpoon:list():select(3) end, {desc = "harpoon 3"})
-    --        vim.keymap.set("n", "<leader>4", function() harpoon:list():select(4) end, {desc = "harpoon 4"})
-    --        vim.keymap.set("n", "<leader>5", function() harpoon:list():select(5) end, {desc = "harpoon 5"})
-    --        vim.keymap.set("n", "<leader>6", function() harpoon:list():select(6) end, {desc = "harpoon 6"})
-    --        vim.keymap.set("n", "<leader>7", function() harpoon:list():select(7) end, {desc = "harpoon 7"})
-    --        vim.keymap.set("n", "<leader>8", function() harpoon:list():select(8) end, {desc = "harpoon 8"})
-    --        vim.keymap.set("n", "<leader>9", function() harpoon:list():select(9) end, {desc = "harpoon 9"})
-
-    --        -- Toggle previous & next buffers stored within Harpoon list
-    --        vim.keymap.set("n", "<leader>a", function() harpoon:list():prev() end, {desc = "harpoon prev"})
-    --        vim.keymap.set("n", "<leader>s", function() harpoon:list():next() end, {desc = "harpoon next"})
-    --    end,
-    --    dependencies = { "nvim-lua/plenary.nvim" }
-    --},
-    --{
-    --    "stevearc/conform.nvim",
-    --    opts = {
-    --        formatters_by_ft = {
-    --            --lua = { "stylua" },
-    --            cpp = {"clang-format"}
-    --            -- Conform will run multiple formatters sequentially
-    --            --python = { "isort", "black" },
-    --        },
-    --        format_on_save = {
-    --            timeout_ms = 500,
-    --            lsp_fallback = true
-    --        }
-    --    },
-    --},
 -------------------------------------------------------------------------------
 -- Keys
 -------------------------------------------------------------------------------
     {"tpope/vim-repeat"},
-    {"tpope/vim-fugitive"},
     {
         'numToStr/Comment.nvim',
         config = function()
@@ -347,8 +308,31 @@ return {
         dependencies = { 'nvim-lua/plenary.nvim' },
         config = function()
             local builtin = require('telescope.builtin')
-            vim.keymap.set("n", "<leader>z", builtin.find_files, { desc = "Telescope find files" })
+            local theme = require('telescope.themes').get_ivy({ previewer = true, })--border = false })
+
+            local finder = function() builtin.find_files(theme) end
+            local grepper = function() builtin.live_grep(theme) end
+            local buffer = function() builtin.buffers(theme) end
+
+            vim.keymap.set("n", "<leader>f", finder, { desc = "Telescope find_files" })
+            vim.keymap.set("n", "<leader>/", grepper, { desc = "Telescope grep" })
+            vim.keymap.set("n", "<leader>b", buffer, { desc = "Telescope buffer" })
         end
+    },
+    {
+        "NeogitOrg/neogit",
+        dependencies = {
+            "nvim-lua/plenary.nvim",         -- required
+            "sindrets/diffview.nvim",        -- optional - Diff integration
+            "nvim-telescope/telescope.nvim", -- optional
+        },
+        keys = { -- lazy loading because I don't want to see it on startup. you can't configure the plugin itself.
+            { "<leader>g", "<cmd>Neogit<cr>", desc = "magit status" },
+            -- { "<leader>c", "<cmd>Neogit commit<cr>", desc = "magit commit" }
+        },
+        opts = {
+            kind = "vsplit"
+        }
     },
     --{
     --    "kylechui/nvim-surround",

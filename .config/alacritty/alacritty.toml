@@ -12,7 +12,7 @@
 #  - /path/to/alacritty.yml
 
 import = [
-   "~/.config/alacritty/themes/alacritty-theme/themes/lucy.toml"
+   "~/.config/alacritty/themes/modus_vivendi.toml"
 ]
 
 # Any items in the `env` entry below will be added as
@@ -127,19 +127,16 @@ import = [
 
 # Font configuration
 #font:
-  # Normal (roman) font face
-  #normal:
-    # Font family
-    #
-    # Default:
-    #   - (macOS) Menlo
-    #   - (Linux/BSD) monospace
-    #   - (Windows) Consolas
-    #family: monospace
+#   normal:
+#     #family: Source Code Pro
+#     style: Regular
+#  size: 11
+[font]
+size = 10
 
-    # The `style` can be specified to pick a specific face.
-    #style: Regular
-
+[font.normal]
+family = "Source Code Pro"
+style = "Regular"
   # Bold font face
   #bold:
     # Font family

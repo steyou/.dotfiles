@@ -1,8 +1,9 @@
+(setq custom-file "~/.emacs.d/emacs-custom.el")
+(load custom-file)
+
 ;; Basic setup
-(setq-default inhibit-startup-message t)
-(setq-default indent-tabs-mode nil) ; always spaces
-(setq-default tab-width 4)
-(setq-default standard-indent 4)
+(setq inhibit-startup-message t)
+(setq indent-tabs-mode nil) ; always spaces
 (menu-bar-mode -1)  ; Disable the menu bar
 (scroll-bar-mode -1)
 (tool-bar-mode -1)
@@ -14,14 +15,15 @@
 ; 80 margin
 (add-hook 'prog-mode-hook #'display-fill-column-indicator-mode)
 (setopt display-fill-column-indicator-column 85)
-;; (setq display-fill-column-indicator-column 80)
 
-;(setq backup-directory-alist `(("." . "~/.emacs.d/tildefiles/")))
 (setq backup-directory-alist nil)
 (setq backup-by-copying t)
 
 (setq read-process-output-max (* 1024 1024)) ;; 1MB
 (setq gc-cons-threshold (* 100 1024 1024)) ;; 100MB
+
+(setq-default tab-width 4)
+(setq-default standard-indent 4)
 
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit) ; forcibly escape prompts on Escape
 
@@ -46,7 +48,6 @@
   :init
   (setq evil-want-integration t)
   (setq evil-want-keybinding nil)
-  (setq evil-undo-system 'undo-tree)
   (setq evil-emacs-state-modes nil)
   (setq evil-insert-state-modes nil)
   (setq evil-motion-state-modes nil)
@@ -61,10 +62,6 @@
   :ensure t
   :config
   (evil-collection-init))
-
-;; Set the default indentation level for C/C++
-(setq c-basic-offset 4)
-(c-set-offset 'innamespace 0)
 
 ;;; For the built-in themes which cannot use `require'.
 (use-package modus-themes
@@ -81,15 +78,15 @@
 
 ;; Display line numbers
 (use-package display-line-numbers
+  :ensure t
   :config
   (setq display-line-numbers-type 'relative)
   (global-display-line-numbers-mode t))
 
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Suites
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (use-package projectile
   :ensure t
   ;:pin melpa-stable
@@ -98,22 +95,36 @@
   :bind (:map projectile-mode-map
               ;("s-p" . projectile-command-map)
               ("C-c p" . projectile-command-map)))
-;  :config
-;(require 'projectile)
-;(define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
-;(projectile-mode +1)
+
+;; Helm is a completion framework for interface navigation
+(use-package helm
+  :ensure t
+  :demand t
+  ;:hook (after-init-startup . open-helm-find-startup)
+  :bind (("M-x" . helm-M-x) ; SC
+         ("C-x C-f" . helm-find-files)
+         ("C-x b" . helm-buffers-list)
+         ("C-x c o" . helm-occur)) ;SC
+         ("M-y" . helm-show-kill-ring) ;SC
+         ("C-x r b" . helm-filtered-bookmarks) ;SC
+  :config
+    ;; (require 'helm-config)
+   ((helm-mode 1)
+    (setq helm-ff-skip-boring-files t)
+    (setq helm-ff-file-name-history-use-recentf)))
+
+(use-package helm-projectile
+  :after (helm projectile)
+  :bind ("C-c f" . helm-projectile-find-file)
+  :ensure t)
 
 (use-package magit
   :ensure t)
 
 (use-package perspective
   :ensure t
-  :bind
-  ;("C-x C-b" . persp-list-buffers)         ; or use a nicer switcher, see below
-  :custom
-  (persp-mode-prefix-key (kbd "C-x x"))  ; pick your own prefix key here
-  :init
-  (persp-mode))
+  :custom (persp-mode-prefix-key (kbd "C-c c"))  ; pick your own prefix key here
+  :init (persp-mode))
 
 ; commented out because it doesn't play nice with modus-vivendi and people on
 ; internet say it's slow
@@ -134,24 +145,18 @@
 (use-package org-roam
   :ensure t
   :custom
-  (org-roam-directory (file-truename "/path/to/org-files/"))
+  (org-roam-directory (file-truename "~/roam/"))
   :bind (("C-c n l" . org-roam-buffer-toggle)
          ("C-c n f" . org-roam-node-find)
          ("C-c n g" . org-roam-graph)
          ("C-c n i" . org-roam-node-insert)
          ("C-c n c" . org-roam-capture)
          ;; Dailies
-         ("C-c n j" . org-roam-dailies-capture-today))
-  :config
-  ;; If you're using a vertical completion framework, you might want a more informative completion interface
-  (setq org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
-  (org-roam-db-autosync-mode)
-  ;; If using org-roam-protocol
-  (require 'org-roam-protocol))
+         ("C-c n j" . org-roam-dailies-capture-today)))
 
 (use-package auctex
-    ::ensure t
-    ::defer t)
+    :ensure t
+    :defer t)
 ;; Use pdf-tools to open PDF files
 (setq TeX-view-program-selection '((output-pdf "PDF Tools"))
       TeX-source-correlate-start-server t)
@@ -164,29 +169,10 @@
 ;; Completions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; Helm is a completion framework for interface navigation
-(use-package helm
-  :ensure t
-  :demand t
-  ;:hook (after-init-startup . open-helm-find-startup)
-  :bind (("M-x" . helm-M-x) ; SC
-         ("C-x C-f" . helm-find-files)
-         ("C-x b" . helm-buffers-list)
-         ("C-x c o" . helm-occur)) ;SC
-         ("M-y" . helm-show-kill-ring) ;SC
-         ("C-x r b" . helm-filtered-bookmarks) ;SC
-  :config
-    ;; (require 'helm-config)
-    (helm-mode 1)
-    (setq helm-ff-skip-boring-files t)
-    (setq helm-ff-file-name-history-use-recentf))
-
 (use-package treemacs
   :ensure t
   :defer t  ;; Defer loading until it's explicitly called
-  :bind
-  ;; Bind treemacs to a convenient key
-  ("C-x t t" . treemacs)  
+  :bind ("C-x t t" . treemacs)  
   :config
   ;; Optional: Customize treemacs settings here
   (setq treemacs-width 30
@@ -202,36 +188,42 @@
 ;; LSP things
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(use-package flycheck
-  :ensure t
-  :init (global-flycheck-mode))
-
 (use-package tree-sitter
   :ensure t
   :config
   (add-hook 'c-mode-hook #'tree-sitter-mode)
   (add-hook 'c++-mode-hook #'tree-sitter-mode))
 
+(use-package flycheck
+  :ensure t
+  :init (global-flycheck-mode))
+
 (use-package lsp-mode
   :init
-  ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
   (setq lsp-keymap-prefix "C-c l")
-  :hook
-  ((c++-mode . lsp-deferred)
-   (c-mode . lsp-deferred)
-   (lsp-mode . lsp-enable-which-key-integration))
-  :commands (lsp lsp-deferred)
-  :config
-  (defun my-lsp()
-    (flycheck-mode)
-    (lsp-ui-mode))
-  )
+  :hook ((c++-mode . lsp-deferred)
+         (c-mode . lsp-deferred)
+         (lsp-mode . lsp-enable-which-key-integration))
+  :commands (lsp lsp-deferred))
 
-;; optionally
-(use-package lsp-ui :commands lsp-ui-mode)
-;; if you are helm user
-(use-package helm-lsp :commands helm-lsp-workspace-symbol)
-(use-package lsp-treemacs :commands lsp-treemacs-errors-list)
+(use-package helm-lsp
+  :after (helm lsp-mode)
+  :commands helm-lsp-workspace-symbol)
+
+(use-package lsp-treemacs
+  :after (lsp-mode treemacs)
+  :ensure t
+  :config (lsp-treemacs-sync-mode 1)  ;; Automatically sync LSP with Treemacs
+  :commands (lsp-treemacs-errors-list lsp-treemacs-symbols lsp-treemacs-references))
+
+(use-package lsp-ui
+  :hook (lsp-mode . lsp-ui-mode)
+  :commands lsp-ui-mode
+  :init
+  (setq lsp-ui-doc-enable t
+        lsp-ui-doc-position 'at-point
+        lsp-ui-sideline-show-diagnostics t
+        lsp-ui-sideline-show-hover t))
 
 ;; company mode
 ;; this is pretty much nvim-cmp in emacs
@@ -276,11 +268,6 @@
 ;  :ensure t
 ;  :config (treemacs-icons-dired-mode))
 ;; Optional: Treemacs integration with LSP
-(use-package lsp-treemacs
-  :after (lsp-mode treemacs)
-  :ensure t
-  :config
-  (lsp-treemacs-sync-mode 1))
 
 ;; which-key
 (use-package which-key
@@ -290,24 +277,8 @@
   (which-key-mode)
   (setq which-key-idle-delay 0.3))
 
-;; Custom-set variables and faces
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(custom-safe-themes
-   '("9a977ddae55e0e91c09952e96d614ae0be69727ea78ca145beea1aae01ac78d2" "e410458d3e769c33e0865971deb6e8422457fad02bf51f7862fa180ccc42c032" default))
- '(helm-minibuffer-history-key "M-p")
- '(highlight-indent-guides-auto-character-face-perc 90)
- '(package-selected-packages
-   '(flycheck treemacs-magit perspective lsp-treemacs treemacs-projectile treemacs company-c-headers pdf-tools org-roam-ui modus-themes which-key company use-package eglot evil undo-tree))
- '(warning-suppress-types '((use-package))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
+;; Set the default indentation level for C/C++
+(setq c-basic-offset 4)
+(c-set-offset 'innamespace 0)
 
 ;; End of init.el
