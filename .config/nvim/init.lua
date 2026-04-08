@@ -45,11 +45,27 @@ vim.keymap.set("n", "<leader><right>", vim.cmd.bnext, { desc = "bnext" })
 -- Kill the current buffer
 vim.keymap.set("n", "<leader>k", function() vim.cmd("bp | bd #") end, { desc = "bkill" })
 
+-- Find relative to the buffer top and bottom (no scrolling off)
+
+vim.keymap.set('n', 'g/', function()
+  local top = vim.fn.line('w0') - 1
+  local bot = vim.fn.line('w$') + 1
+  local prefix = string.format('\\%%>%dl\\%%<%dl', top, bot)
+  vim.fn.feedkeys('/' .. prefix, 'n')
+end)
+
+vim.keymap.set('n', 'g?', function()
+  local top = vim.fn.line('w0') - 1
+  local bot = vim.fn.line('w$') + 1
+  local prefix = string.format('\\%%>%dl\\%%<%dl', top, bot)
+  vim.fn.feedkeys('?' .. prefix, 'n')
+end)
+
 -------------------------------------------------------------------------------
 -- Lazy loading setup
 -------------------------------------------------------------------------------
 
-require('colemak_dh').setup(0)
+--require('colemak_dh').setup(0)
 
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
@@ -66,12 +82,13 @@ vim.opt.rtp:prepend(lazypath)
 
 local config_dir = vim.fn.stdpath("config")
 package.path = package.path .. ";" .. vim.fn.stdpath("config") .. "/?.lua"
-require("lazy").setup(
-    {
-        require("plugins"),
-        require("themes")("modus")
-    }
-)
+local themes = require("themes")
 
--- set the theme
---require("gruvbox-material")
+themes.setup_autocmd()
+
+require("lazy").setup({
+    require("plugins"),
+    themes.specs(),
+})
+
+vim.cmd.colorscheme("no-clown-fiesta")

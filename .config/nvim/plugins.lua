@@ -4,7 +4,7 @@ return {
 -------------------------------------------------------------------------------
     {
         'nvim-lualine/lualine.nvim',
-        dependencies = { 'nvim-tree/nvim-web-devicons' },
+        dependencies = { 'nvim-tree/nvim-web-devicons', 'SmiteshP/nvim-navic' },
         opts = {
             options = {
                 component_separators = { left = '', right = '' },
@@ -13,8 +13,16 @@ return {
             sections = {
                 lualine_a = {},
                 lualine_b = {},
-                lualine_c = {{'filename', symbols = { unnamed = "*scratch*", newfile = "*new*" }}, 'progress', 'location', {'tabs', tab_max_length = 80, symbols = { modified = '*' }}},
-                lualine_x = {{'diff', colored = false}, 'encoding'},
+                lualine_c = {
+                    { 'filename', symbols = { unnamed = "*scratch*", newfile = "*new*" } },
+                    'progress',
+                    'location',
+                    { 'tabs', tab_max_length = 80, symbols = { modified = '*' } }
+                },
+                lualine_x = {
+                    { 'navic', navic_opts = { highlight = false, separator = ' > ' } },
+                    {'diff', colored = false}, 'encoding', {'windows', show_modified_status = false, mode = 1}
+                },
                 lualine_y = {},
                 lualine_z = {},
             }
@@ -35,7 +43,6 @@ return {
                 untracked = { text = '┆' },
             }
         },
-        config = true,
         main = "gitsigns"
     },
     {
@@ -46,30 +53,12 @@ return {
         },
         config = true
     },
-    --{
-    --    'goolord/alpha-nvim',
-    --    dependencies = { 'echasnovski/mini.icons' },
-    --    config = function ()
-    --        require'alpha'.setup(
-    --            require'alpha.themes.startify'.config
-    --        )
-    --        local startify = require'alpha.themes.startify'
-    --        local version_info = vim.version()
-    --        startify.section.header.val = "Neovim v" .. version_info.major .. "." .. version_info.minor .. "." .. version_info.patch
-    --    end
-    --},
 -------------------------------------------------------------------------------
 -- LSP Plugins
 -------------------------------------------------------------------------------
     {
-        'VonHeikemen/lsp-zero.nvim',
-        branch = 'v4.x',
-        lazy = true,
-        config = false -- The docs say to do this
-    },
-    {
         'hrsh7th/nvim-cmp',
-        event = 'InsertEnter',
+        event = { 'InsertEnter', 'CmdlineEnter' },
         dependencies = {
             {'hrsh7th/cmp-buffer'},
             {'hrsh7th/cmp-path'},
@@ -85,9 +74,9 @@ return {
                     { name = 'path' },
                     { name = 'luasnip' },
                 },
-                mapping = {
+                mapping = cmp.mapping.preset.insert({
                     ['<TAB>'] = cmp.mapping.confirm({select = false})
-                },
+                }),
                 snippet = {
                     expand = function(args)
                         require('luasnip').lsp_expand(args.body)
@@ -199,11 +188,35 @@ return {
         end
     },
     {
+        'SmiteshP/nvim-navic',
+        dependencies = { 'neovim/nvim-lspconfig' },
+        opts = {
+            highlight = false,
+            separator = ' > ',
+            lsp = {
+                auto_attach = false,
+            },
+        },
+        config = function(_, opts)
+            local navic = require('nvim-navic')
+            navic.setup(opts)
+            vim.api.nvim_create_autocmd('LspAttach', {
+                desc = 'Navic attach',
+                callback = function(args)
+                    local client = vim.lsp.get_client_by_id(args.data.client_id)
+                    if client and client.server_capabilities.documentSymbolProvider then
+                        navic.attach(client, args.buf)
+                    end
+                end,
+            })
+        end,
+    },
+    {
         "nvim-treesitter/nvim-treesitter",
         build = ":TSUpdate",
         config = function()
             require("nvim-treesitter.configs").setup({
-                ensure_installed = {"lua", "cpp", "rust"},
+                ensure_installed = {"lua", "cpp", "rust", "objc"},
                 sync_install = false,
                 highlight = { enable = true, disable = {"latex"}},
                 indent = { enable = true },
@@ -227,17 +240,6 @@ return {
         }
       end,
     },
-    -- {
-    --     'stevearc/aerial.nvim',
-    --     config = function()
-    --         require("aerial").setup()
-    --         vim.keymap.set("n", "<leader>o", vim.cmd.AerialToggle, { desc = "Toggle outline" })
-    --     end,
-    --     dependencies = {
-    --         "nvim-treesitter/nvim-treesitter",
-    --         "nvim-tree/nvim-web-devicons"
-    --     },
-    -- },
     {
         "folke/trouble.nvim",
         dependencies = { "nvim-tree/nvim-web-devicons" },
@@ -266,33 +268,11 @@ return {
 -------------------------------------------------------------------------------
     {"tpope/vim-repeat"},
     {
-        'numToStr/Comment.nvim',
-        config = function()
-            require('Comment').setup({
-                mappings = {
-                    basic = false,
-                    extra = false
-                }
-            })
-            local comment_api = require('Comment.api')
-            vim.keymap.set('n', '<C-/>', function()
-                comment_api.toggle.linewise.current()
-            end)
-
-            vim.keymap.set('x', '<C-/>', function()
-                local esc = vim.api.nvim_replace_termcodes('<ESC>', true, false, true)
-                vim.api.nvim_feedkeys(esc, 'nx', false) -- Escape visual mode
-                comment_api.toggle.linewise(vim.fn.visualmode())
-            end, { noremap = true, silent = true })
-        end
-    },
-    {
         "folke/which-key.nvim",
         event = "VeryLazy",
         opts = {
-            window = {
-                margin = {0,0,0,0},
-                padding = {0,0,0,0}
+            win = {
+                padding = { 0, 0 }
             },
             layout = {
                 height = { max = 10 }
@@ -319,49 +299,5 @@ return {
             vim.keymap.set("n", "<leader>b", buffer, { desc = "Telescope buffer" })
         end
     },
-    {
-        "NeogitOrg/neogit",
-        dependencies = {
-            "nvim-lua/plenary.nvim",         -- required
-            "sindrets/diffview.nvim",        -- optional - Diff integration
-            "nvim-telescope/telescope.nvim", -- optional
-        },
-        keys = { -- lazy loading because I don't want to see it on startup. you can't configure the plugin itself.
-            { "<leader>g", "<cmd>Neogit<cr>", desc = "magit status" },
-            -- { "<leader>c", "<cmd>Neogit commit<cr>", desc = "magit commit" }
-        },
-        opts = {
-            kind = "vsplit"
-        }
-    },
-    --{
-    --    "kylechui/nvim-surround",
-    --    version = "*", -- Use for stability; omit to use `main` branch for the latest features
-    --    event = "VeryLazy",
-    --    opts = {
-    --        keymaps = {
-    --            insert          = '<C-g>s',
-    --            insert_line     = '<leader>C-ggS',
-    --            normal          = '<leader>s',
-    --            normal_cur      = '<leader>S',
-    --            normal_line     = '<leader>sgs',
-    --            normal_cur_line = '<leader>SgS',
-    --            visual          = '<leader>s',
-    --            visual_line     = '<leader>S',
-    --            delete          = '<leader>sd',
-    --            change          = '<leader>sc',
-    --        }
-    --    },
-    --    config = true
-    --    --function(plugin, opts)
-    --    --    require('nvim-surround').setup(opts)
-    --    --end
-    --},
-    {
-        "ggandor/leap.nvim",
-        config = function()
-            vim.keymap.set({'n', 'x', 'o'}, '\\',  '<Plug>(leap)')
-            --vim.keymap.set({'n', 'x', 'o'}, '|"', '<Plug>(leap-from-window)')
-        end
-    },
+    {"https://github.com/tpope/vim-abolish"}
 }

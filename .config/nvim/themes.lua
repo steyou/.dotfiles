@@ -1,181 +1,85 @@
-return function(selection)
-    return {
-        {
-            "Yazeed1s/oh-lucy.nvim",
-            cond = selection == "lucy",
-            config = function()
-                vim.cmd([[colorscheme oh-lucy-evening]])
-            end
-        },
-        {
-            "aktersnurra/no-clown-fiesta.nvim",
-            cond = selection == "noclown",
-            config = function()
-                vim.cmd([[colorscheme no-clown-fiesta]])
-            end
-        },
-        {
-            "sainnhe/gruvbox-material",
-            cond = selection == "gruvbox",
-            config = function()
-                vim.cmd([[
-                    " Important!!
-                    if has('termguicolors')
-                      set termguicolors
-                    endif
+local M = {}
 
-                    " For dark version.
-                    set background=dark
+local themes = {
+    ["oh-lucy-evening"] = { plugin = "Yazeed1s/oh-lucy.nvim" },
+    ["no-clown-fiesta"] = { plugin = "steyou/no-clown-fiesta.nvim" },
+    ["gruvbox-material"] = {
+        plugin = "sainnhe/gruvbox-material",
+        pre_setup = function()
+            vim.opt.background = "dark"
+            vim.g.gruvbox_material_background = "hard"
+        end,
+    },
+    ["kanagawa"] = {
+        plugin = "rebelot/kanagawa.nvim",
+        pre_setup = function()
+            require("kanagawa").setup({
+                theme = "dragon",
+                background = { dark = "dragon", light = "dragon" }
+            })
+            vim.opt.background = "dark"
+        end,
+    },
+    ["kanagawabones"] = {
+        plugin = "mcchrish/zenbones.nvim",
+        dependencies = { "rktjmp/lush.nvim" },
+        pre_setup = function() vim.opt.background = "dark" end,
+    },
+    ["dracula"]      = { plugin = "Mofiqul/dracula.nvim" },
+    ["modus"]        = { plugin = "miikanissi/modus-themes.nvim" },
+    ["gotham256"]    = { plugin = "whatyouhide/vim-gotham" },
+    ["carbonfox"]    = {
+        plugin = "EdenEast/nightfox.nvim",
+        pre_setup = function() vim.opt.background = "dark" end,
+    },
+    ["mellow"]       = { plugin = "mellow-theme/mellow.nvim" },
+    ["oxocarbon"]    = {
+        plugin = "nyoom-engineering/oxocarbon.nvim",
+        pre_setup = function() vim.opt.background = "dark" end,
+    },
+    ["jellybeans-nvim"] = {
+        plugin = "metalelf0/jellybeans-nvim",
+        dependencies = { "rktjmp/lush.nvim" },
+    },
+    ["alabaster"]    = {
+        plugin = "p00f/alabaster.nvim",
+        pre_setup = function()
+            vim.opt.background = "dark"
+            vim.g.alabaster_dim_comments = true
+        end,
+    },
+    ["everforest"]   = { plugin = "sainnhe/everforest" },
+    ["cold"]         = { plugin = "gmr458/cold.nvim" },
+}
 
-                    " Available values: 'hard', 'medium'(default), 'soft'
-                    let g:gruvbox_material_background = 'hard'
-
-                    colorscheme gruvbox-material
-                ]])
+function M.setup_autocmd()
+    vim.opt.termguicolors = true
+    vim.api.nvim_create_autocmd("ColorSchemePre", {
+        callback = function(ev)
+            local entry = themes[ev.match]
+            if entry then
+                if entry.pre_setup then
+                    entry.pre_setup()
+                end
             end
-        },
-        {
-            "rebelot/kanagawa.nvim",
-            cond = selection == "kanagawa",
-            config = function()
-                require('kanagawa').setup({
-                    theme = "dragon",
-                    background = {
-                        dark = "dragon",
-                        light = "dragon"
-                    }
-                })
-                vim.cmd([[
-                    set background=dark
-                    colorscheme kanagawa
-                ]])
-            end
-        },
-        {
-            "mcchrish/zenbones.nvim",
-            cond = selection == "zenbones",
-            dependencies = {
-                "rktjmp/lush.nvim"
-            },
-            config = function()
-                vim.cmd([[
-                    if has('termguicolors')
-                      set termguicolors
-                    endif
-                    set background=dark
-                    colorscheme kanagawabones
-                ]])
-            end
-        },
-        {
-            "Mofiqul/dracula.nvim",
-            cond = selection == "dracula",
-            config = function()
-                vim.cmd([[
-                    "set termguicolors
-                    colorscheme dracula
-                ]])
-            end
-        },
-        {
-            "miikanissi/modus-themes.nvim",
-            cond = selection == "modus",
-            config = function()
-                vim.cmd([[colorscheme modus]])
-            end
-        },
-        {
-            "whatyouhide/vim-gotham",
-            cond = selection == "gotham",
-            config = function()
-                vim.cmd([[
-                    set termguicolors
-                    colorscheme gotham256
-                ]])
-            end
-        },
-        {
-            "EdenEast/nightfox.nvim",
-            cond = selection == "nightfox",
-            config = function()
-                vim.cmd([[
-                    set termguicolors
-                    set background=dark
-                    colorscheme carbonfox
-                ]])
-            end
-        },
-        {
-            "eemed/sitruuna.vim",
-            cond = selection == "lemon",
-            config = function()
-                vim.cmd([[
-                    colorscheme sitruuna
-                ]])
-            end
-        },
-        {
-            "mellow-theme/mellow.nvim",
-            cond = selection == "mellow",
-            config = function()
-                vim.cmd([[
-                    set termguicolors
-                    colorscheme mellow
-                ]])
-            end
-        },
-        {
-            "nyoom-engineering/oxocarbon.nvim",
-            cond = selection == "oxo",
-            config = function()
-                vim.cmd([[
-                    set termguicolors
-                    set background=dark
-                    colorscheme oxocarbon
-                ]])
-            end
-        },
-        {
-            "metalelf0/jellybeans-nvim",
-            cond = selection == "jellybeans",
-            dependencies = {
-                "rktjmp/lush.nvim",
-            },
-            config = function()
-                vim.cmd([[
-                    set termguicolors
-                    colorscheme jellybeans-nvim
-                ]])
-            end
-        },
-        {
-            "p00f/alabaster.nvim",
-            cond = selection == "alabaster",
-            config = function()
-                vim.cmd([[
-                    set termguicolors
-                    set background=dark
-                    colorscheme alabaster
-                ]])
-                vim.g.alabaster_dim_comments=true
-            end
-        },
-        {
-          'sainnhe/everforest',
-          cond = selection == "everforest",
-          config = function()
-            -- Optionally configure and load the colorscheme
-            -- directly inside the plugin declaration.
-            -- vim.g.everforest_enable_italic = true
-            vim.cmd.colorscheme('everforest')
-          end
-        },
-        {
-            "gmr458/cold.nvim",
-            cond = selection == "cold",
-            config = function()
-                vim.cmd.colorscheme('cold')
-            end
-        }
-    }
+        end,
+    })
 end
+
+function M.specs()
+    local specs = {}
+    local seen = {}
+    for _, entry in pairs(themes) do
+        if not seen[entry.plugin] then
+            seen[entry.plugin] = true
+            local spec = { entry.plugin }
+            if entry.dependencies then
+                spec.dependencies = entry.dependencies
+            end
+            table.insert(specs, spec)
+        end
+    end
+    return specs
+end
+
+return M
